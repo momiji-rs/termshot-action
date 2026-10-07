@@ -75,6 +75,8 @@ Each pull request gets **one comment, updated in place on every push**:
 
 - [Bubble Tea](docs/bubbletea.md): your teatest golden files are already screenshots. Point `logs` at
   `testdata/*.golden`, and each pull request shows the screens its tests check.
+- [Ratatui](docs/ratatui.md): beside each insta text snapshot, keep one of the ANSI the terminal
+  receives. termshot-action renders it, so a change of colour shows, which a text snapshot misses.
 
 ## Shots
 

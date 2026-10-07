@@ -7,6 +7,13 @@ version numbers follow [Semantic Versioning](https://semver.org/). Pushing a tag
 
 ## [Unreleased]
 
+### Added
+
+- A guide for Ratatui, docs/ratatui.md. Beside each insta text snapshot, which shows no
+  colour, it keeps an ANSI snapshot of what the terminal receives, written with Ratatui's own
+  crossterm backend into memory, as insta's `.snap.ansi`. termshot-action renders those. Its
+  example, examples/ratatui, runs in this repository's screens workflow.
+
 ## [0.5.0] - 2026-10-07
 
 ### Added
