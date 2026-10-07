@@ -326,7 +326,8 @@ and macOS.
 
 ## Limits
 
-- Linux and macOS runners only: the core opens a Unix PTY.
+- Linux and macOS runners only: the core opens a Unix PTY. Self-hosted runners need runner
+  2.327.1 or newer, for `actions/upload-artifact` v7.
 - A matrix job needs a different `id` per leg, or the artifacts clash.
 - Pruning while another job stores screens can, rarely, drop an object that job reused; its next
   push stores it again.

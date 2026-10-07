@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # The default branch: this repository's own action, not the fork's.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: ./
         with:
           size: 34x11

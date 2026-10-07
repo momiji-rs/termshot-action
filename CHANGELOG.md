@@ -7,12 +7,22 @@ version numbers follow [Semantic Versioning](https://semver.org/). Pushing a tag
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-07
+
 ### Added
 
 - A guide for Bubble Tea, docs/bubbletea.md, which turns teatest golden files into pull request
   screenshots. It covers the three settings that make a golden file the same on every machine,
   `WaitFor` consuming output, and the alternate screen. Its example, examples/bubbletea, runs
   in this repository's screens workflow.
+
+### Changed
+
+- The action uploads screens with `actions/upload-artifact` v7, which runs on Node 24; v4 ran
+  on Node 20, which GitHub has deprecated, and each run warned about it. Self-hosted runners
+  need [runner 2.327.1](https://github.com/actions/runner/releases/tag/v2.327.1) or newer;
+  GitHub-hosted runners already have it. The artifacts are the same, so baselines and the
+  comment workflow are unaffected.
 
 ### Fixed
 
@@ -118,7 +128,8 @@ version numbers follow [Semantic Versioning](https://semver.org/). Pushing a tag
 - Pull requests from forks are published by a `workflow_run` workflow, which
   treats the artifact as untrusted data.
 
-[Unreleased]: https://github.com/momiji-rs/termshot-action/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/momiji-rs/termshot-action/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/momiji-rs/termshot-action/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/momiji-rs/termshot-action/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/momiji-rs/termshot-action/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/momiji-rs/termshot-action/compare/v0.2.2...v0.3.0

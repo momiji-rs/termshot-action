@@ -134,7 +134,7 @@ runs:
 
     - name: upload screens
       if: always() && steps.run.outputs.dir != '' && github.event_name != 'workflow_run' && inputs.bundle-dir == ''
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: termshot-${{ inputs.id }}
         path: ${{ steps.run.outputs.dir }}
