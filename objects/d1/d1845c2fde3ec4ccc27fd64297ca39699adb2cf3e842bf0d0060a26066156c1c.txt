@@ -1,0 +1,8 @@
+╭──────────────────────────────────╮
+│ Deploy #17                       │
+│ ✓ api         live               │
+│ ✓ web         live               │
+│ ✗ worker      failed             │
+│ ● cron        pending            │
+╰──────────────────────────────────╯
+2/4 live · ↑/↓ move
