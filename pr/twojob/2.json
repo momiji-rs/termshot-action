@@ -1,0 +1,13 @@
+{
+ "termshot": "0.2.0",
+ "commit": "fc89f04ef1b9cbe5a88bb374a37cb31b9025f9e9",
+ "updated": "2026-10-07T15:39:12+00:00",
+ "shots": {
+  "menu": {
+   "png": "objects/03/032064f498919ac33380eaafc161d32af6b74b7343aa210e9a239c32474d864d.png",
+   "txt": "objects/66/66235f8a48ec3e9cbccca525811de19818bfb5725e0e37740acf5d269f2e5424.txt",
+   "json": "objects/4d/4d94eaff4c2647534aea2a0b4b998c277606f90439e118fca89d8b35c74fbe2f.json"
+  }
+ },
+ "base_ref": "main"
+}

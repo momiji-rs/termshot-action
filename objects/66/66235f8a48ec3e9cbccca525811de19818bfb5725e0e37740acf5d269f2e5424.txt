@@ -1,0 +1,8 @@
+╭─ termshot demo ─────────────╮
+│  ▸ Inbox                    │
+│    Drafts                   │
+│    Sent                     │
+│    Trash                    │
+│    Settings                 │
+╰─────────────────────────────╯
+ ↑↓ move · enter pick · q quit
