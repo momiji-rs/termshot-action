@@ -1,0 +1,18 @@
+{
+ "base_ref": "main",
+ "commit": "09821e3d7855095da6a72aa46f02fc44a1fcf0d4",
+ "shots": {
+  "jobs__tests__failed_run.snap": {
+   "json": "objects/c0/c0e0a19bd0b2766980b7fcabef8e63eebfd811d0cb18349069100b8e70641612.json",
+   "png": "objects/79/79141b0767fea3662182b18cdeeefad1c7fae1fc262c2fe63dedbaf14e2cfe23.png",
+   "txt": "objects/c5/c5175b4fc13df9212e5b664f7939be3ff88f53a072bec77a2bf7fdedad3b138c.txt"
+  },
+  "jobs__tests__passed_run.snap": {
+   "json": "objects/ba/babb69f3608229a549ed0811f4c7908490d1c5acf6088a8f11905a118c376ff3.json",
+   "png": "objects/2c/2c216c6a8365cc90b819d935f66a6aad0e7be137544fbbb1ac8571152daa21b2.png",
+   "txt": "objects/d7/d7dd104f96f981a7fcce6c0bbfb05c32ecea125e8891e7b2dcb28ba7e9dd6d55.txt"
+  }
+ },
+ "termshot": "0.3.0",
+ "updated": "2026-10-07T21:53:12+00:00"
+}
