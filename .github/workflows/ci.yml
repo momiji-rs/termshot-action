@@ -10,7 +10,10 @@ permissions:
   contents: read
 
 jobs:
-  test:
+  # The core's own tests live with it, in momiji-rs/gh-termshot. This runs the
+  # action as a workflow would, on each runner it supports: download the core,
+  # check it, capture a TUI driven by keys, render, and leave the artifact.
+  smoke:
     strategy:
       fail-fast: false
       matrix:
@@ -18,10 +21,36 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-      - id: install
-        run: ./install.sh
+        with:
+          persist-credentials: false
+      - uses: ./
+        id: shots
+        with:
+          mode: render
+          id: smoke-${{ matrix.os }}
+          size: 34x11
+          shots: |
+            menu: ./demo/menu.sh
+              wait-for Inbox
+              snap start
+              key down down
+              key enter
+              wait-for Opened
+      - name: the screens and the bundle are there
         env:
-          VERSION: 0.2.0
-      - run: python3 tests/run.py "${{ steps.install.outputs.bin }}"
+          DIR: ${{ steps.shots.outputs.dir }}
+        run: |
+          ls -la "$DIR"
+          for f in menu.png menu.start.png menu.json menu.pty .termshot-bundle.json; do test -s "$DIR/$f"; done
+          grep -q 'Opened Sent' "$DIR/menu.txt"
+          grep -q 'Inbox' "$DIR/menu.start.txt"
+          head -c 8 "$DIR/menu.png" | od -An -tx1 | grep -q '89 50 4e 47 0d 0a 1a 0a'
+
+  yaml:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: action.yml and workflows parse as YAML
         run: ruby -ryaml -e 'Dir["{action.yml,.github/workflows/*.yml}"].each { |f| YAML.load_file(f) }'

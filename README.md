@@ -97,8 +97,10 @@ reaches the image.
 ## How it works
 
 1. **Render.** termshot turns each log into a PNG, its `--text` and its `--json`. It needs no
-   browser, ffmpeg or font setup: about 10 ms a screen, from a static binary checked against the
-   release's SHA256SUMS.
+   browser, ffmpeg, Python or font setup. The work is done by one static binary,
+   [gh-termshot](https://github.com/momiji-rs/gh-termshot) (`core-version`), which links the termshot
+   library and is checked against its release's SHA256SUMS before it runs. The runner needs bash and
+   curl, and unzip to publish a fork's screens.
 2. **Compare.** termshot is deterministic, so the same screen gives the same bytes on every runner,
    and a change is exact rather than a pixel-tolerance guess. A push to a branch stores that
    branch's screens as its baseline. A pull request compares with the baseline of its base branch.
@@ -292,7 +294,8 @@ older run that finishes last can't overwrite a newer one. A `concurrency` group 
 | `size` | `100x30` | terminal size for shots and logs that don't give one |
 | `px` | `28` | font pixel height |
 | `timeout` | `10` | seconds a shot may take |
-| `font`, `fallback-font`, `args` | | passed to termshot; give the publish workflow the same |
+| `font`, `fallback-font` | | fonts for termshot (`FILE`, `FILE#N`, `FILE#NAME`); give the publish workflow the same |
+| `args` | | more termshot options. The built-in renderer takes `--lf-newline`; others need `termshot-version` or `termshot-path` |
 | `mode` | `auto` | `render` (capture only, no API calls), `run` (capture and publish), or `publish` (the default on `workflow_run`, or with `bundle-dir`) |
 | `bundle-dir` | | a downloaded artifact to publish, from an earlier `render` job of the same run |
 | `images` | `rerender` | in mode publish, `bundle` uses the render job's images (checked, own branches only) |
@@ -303,19 +306,22 @@ older run that finishes last can't overwrite a newer one. A `concurrency` group 
 | `assets-repo`, `assets-token` | this repository, `github-token` | where to store the files |
 | `retention-days` | `30` | `0` never prunes |
 | `fail-on-change` | `false` | |
-| `termshot-version` / `termshot-path` | `0.2.0` | release to download, or a binary to use |
+| `core-version` / `core-path` | `0.2.0` | the gh-termshot release that does the work, or a binary to use |
+| `termshot-version` / `termshot-path` | | render with this termshot release's CLI, or this binary, instead of the library built into the core |
 
 Outputs: `changed` (count), `dir` (logs, PNGs and texts), `comment-url`.
 
 ## Tests
 
-`python3 tests/run.py path/to/termshot` runs the action against an in-memory GitHub API:
-capture with steps and sizes, baselines, compare and diff, the sticky comment, the fork path
-through an artifact, the checks on that artifact, and pruning.
+The core's tests live with it, in [gh-termshot](https://github.com/momiji-rs/gh-termshot): they run the
+action against an in-memory GitHub API (capture with steps and sizes, baselines, compare and diff,
+the sticky comment, the fork path through an artifact, the checks on that artifact, least
+privilege, and pruning). This repository's CI runs the action itself on Linux (x86-64 and arm64)
+and macOS.
 
 ## Limits
 
-- Linux and macOS runners only; Windows has no PTY that Python can open.
+- Linux and macOS runners only: the core opens a Unix PTY.
 - A matrix job needs a different `id` per leg, or the artifacts clash.
 - Pruning while another job stores screens can, rarely, drop an object that job reused; its next
   push stores it again.

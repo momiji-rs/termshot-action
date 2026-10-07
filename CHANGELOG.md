@@ -7,6 +7,28 @@ version numbers follow [Semantic Versioning](https://semver.org/). Pushing a tag
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-07
+
+### Changed
+
+- The action no longer runs Python. Its core is
+  [gh-termshot](https://github.com/momiji-rs/gh-termshot) 0.2.0 (`core-version`), one static
+  binary that the action downloads and checks against its release's SHA256SUMS. The same code
+  makes gh-termshot's local previews.
+- Rendering uses the termshot library built into the core, instead of downloading the termshot
+  CLI. On the screens checked, the PNG, text and JSON are byte for byte the CLI's, so baselines
+  stored by 0.3.x still match.
+- `termshot-version` has no default now. Set it, or `termshot-path`, to render with a termshot
+  CLI as before.
+- `args` takes `--lf-newline` with the built-in renderer. Other termshot options need
+  `termshot-version` or `termshot-path`.
+
+### Added
+
+- `core-version` and `core-path` choose the core.
+- CI runs the action itself on Linux (x86-64 and arm64) and macOS. The core's own tests, ported
+  from the Python suite, run in gh-termshot.
+
 ## [0.3.1] - 2026-10-07
 
 ### Fixed
@@ -84,7 +106,8 @@ version numbers follow [Semantic Versioning](https://semver.org/). Pushing a tag
 - Pull requests from forks are published by a `workflow_run` workflow, which
   treats the artifact as untrusted data.
 
-[Unreleased]: https://github.com/momiji-rs/termshot-action/compare/v0.3.1...HEAD
+[Unreleased]: https://github.com/momiji-rs/termshot-action/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/momiji-rs/termshot-action/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/momiji-rs/termshot-action/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/momiji-rs/termshot-action/compare/v0.2.2...v0.3.0
 [0.2.2]: https://github.com/momiji-rs/termshot-action/compare/v0.2.1...v0.2.2
