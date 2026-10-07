@@ -6,7 +6,7 @@ import {Box, Text, useInput} from 'ink';
 export const services = [
   {name: 'api', status: 'live'},
   {name: 'web', status: 'live'},
-  {name: 'worker', status: 'failed'},
+  {name: 'worker', status: 'live'},
   {name: 'cron', status: 'pending'},
 ];
 
