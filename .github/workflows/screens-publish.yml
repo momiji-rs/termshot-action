@@ -1,20 +1,19 @@
 name: screens-publish
 
-# Publishes the screens of pull requests from forks, whose own runs have a
-# read-only token. This runs from the default branch and never runs their code.
+# Publishes what screens.yml rendered: baselines for pushes, comments for pull
+# requests, forks included. It runs from the default branch and never runs the
+# code that was screenshot.
 on:
   workflow_run:
     workflows: [screens]
     types: [completed]
 
 permissions:
-  actions: read
-  contents: write
-  pull-requests: write
+  contents: write        # store the images on the termshot-assets branch
+  pull-requests: write   # post the comment
 
 jobs:
   publish:
-    if: github.event.workflow_run.event == 'pull_request'
     runs-on: ubuntu-latest
     steps:
       # The default branch: this repository's own action, not the fork's.

@@ -151,9 +151,13 @@ def main():
 
     print("== mode publish refuses what doesn't match")
     _, _, r = run({}, "workflow_run", wr(50, "e" * 40), tmp, expect=1)
-    check("is not the one run" in r.stdout, "a head sha that isn't the PR's")
+    check("not one this action wrote for this run" in r.stdout, "a bundle for another commit")
     _, _, r = run({}, "workflow_run", wr(50, "f" * 40, repo="other/r"), tmp, expect=1)
-    check("is not the one run" in r.stdout, "a head repository that isn't the PR's")
+    check("is not the one this run was for" in r.stdout, "a head repository that isn't the PR's")
+    S.pulls[8]["head"]["sha"] = "9" * 40
+    _, _, r = run({}, "workflow_run", wr(50, "f" * 40), tmp)
+    check("newer commits" in r.stderr, "a run for an outdated commit is skipped")
+    S.pulls[8]["head"]["sha"] = "f" * 40
     bad = dict(files)
     b = json.loads(bad[".termshot-bundle.json"])
     b["screens"][0]["name"] = "../../etc/x"
@@ -176,12 +180,47 @@ def main():
     _, _, r = run({}, "workflow_run", wr(50, "f" * 40), tmp)
     check("closed" in r.stderr, "a closed PR is left alone")
 
+    print("== least privilege: mode render, then publish")
+    calls = len(S.calls)
+    out, _, _ = run({"INPUT_SHOTS": GREET2, "INPUT_MODE": "render"}, "pull_request",
+                    pr_event(9, "d" * 40), tmp)
+    check(len(S.calls) == calls, "mode render makes no API calls, even with a token")
+    b9 = json.load(open(os.path.join(out, ".termshot-bundle.json")))
+    check(not b9["published"] and b9["pr"] == 9, "and leaves an unpublished bundle")
+    artifact(60, {n: open(os.path.join(out, n), "rb").read() for n in os.listdir(out)})
+    run({}, "workflow_run", wr(60, "d" * 40, repo=REPO), tmp)
+    body, n = comment(9)
+    check(n == 1 and "1 changed" in body, "workflow_run publishes a same-repo PR")
+    out, _, _ = run({"INPUT_SHOTS": GREET2, "INPUT_MODE": "render"}, "pull_request",
+                    pr_event(10, "e" * 40), tmp)
+    run({"INPUT_BUNDLE_DIR": out}, "pull_request", pr_event(10, "e" * 40), tmp)
+    body, n = comment(10)
+    check(n == 1 and "1 changed" in body, "bundle-dir publishes from a later job of the run")
+    calls = len(S.calls)
+    _, _, r = run({"INPUT_BUNDLE_DIR": out}, "pull_request",
+                  pr_event(11, "e" * 40, head_repo="someone/r"), tmp)
+    check("read-only token in every job" in r.stderr and len(S.calls) == calls,
+          "bundle-dir on a fork explains instead of failing")
+    out, _, _ = run({"INPUT_SHOTS": GREET, "INPUT_MODE": "render", "GITHUB_REF_NAME": "main",
+                     "GITHUB_SHA": "3" * 40}, "push", {"repository": {"private": False}}, tmp)
+    artifact(61, {n: open(os.path.join(out, n), "rb").read() for n in os.listdir(out)})
+    wpush = lambda sha: {"workflow_run": {"id": 61, "event": "push", "head_sha": sha,
+                                          "head_branch": "main", "html_url": "https://x/run",
+                                          "head_repository": {"full_name": REPO}}}
+    _, _, r = run({}, "workflow_run", wpush("3" * 40), tmp)
+    check("has moved on" in r.stderr, "a push run that is no longer the branch head is skipped")
+    S.branches["main"] = "3" * 40
+    run({}, "workflow_run", wpush("3" * 40), tmp)
+    m = json.loads(S.files()["baseline/termshot/main.json"])
+    check(m["commit"] == "3" * 40, "workflow_run stores the baseline of a push")
+
     print("== pruning")
     S.pulls[7].update(state="closed", closed_at="2020-01-01T00:00:00Z")
     S.pulls[8].update(state="closed", closed_at="2099-01-01T00:00:00Z")
     pr8 = {p for p in S.files() if p == "pr/termshot/8.json"}
     before = set(S.files())
-    push("main", "2" * 40, GREET, tmp)
+    S.branches["main"] = "4" * 40
+    push("main", "4" * 40, GREET, tmp)
     after = set(S.files())
     check("pr/termshot/7.json" not in after, "an old closed PR's manifest goes")
     check(pr8 <= after, "a recently closed PR's manifest stays")

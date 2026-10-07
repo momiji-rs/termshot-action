@@ -7,8 +7,10 @@ Screenshot your CLI or TUI in CI, and see on the pull request what changed.
 
 ![The demo menu after key down down enter](docs/demo.png)
 
+Two workflows, so the job that runs your code never holds a write token:
+
 ```yaml
-# .github/workflows/screens.yml
+# .github/workflows/screens.yml: builds and runs your program, read-only
 name: screens
 on:
   pull_request:
@@ -16,8 +18,7 @@ on:
     branches: [main]
 
 permissions:
-  contents: write        # store the PNGs on the termshot-assets branch
-  pull-requests: write   # post the comment
+  contents: read
 
 jobs:
   screens:
@@ -27,6 +28,7 @@ jobs:
       - run: cargo build --release   # or whatever builds your program
       - uses: momiji-rs/termshot-action@v0
         with:
+          mode: render
           shots: |
             help: ./target/release/myapp --help
             list@120x20: ./target/release/myapp list --color=always
@@ -37,6 +39,29 @@ jobs:
               type hello
               key enter
 ```
+
+```yaml
+# .github/workflows/screens-publish.yml: publishes, never runs your code
+name: screens-publish
+on:
+  workflow_run:
+    workflows: [screens]
+    types: [completed]
+
+permissions:
+  actions: read          # download the screens run's artifact
+  contents: write        # store the images on the termshot-assets branch
+  pull-requests: write   # post the comment
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: momiji-rs/termshot-action@v0   # mode publish, from the event
+```
+
+This covers pushes, pull requests from branches, pull requests from forks, and Dependabot. See
+[Permissions](#permissions) for why it is split, and for a one-file setup.
 
 Each pull request gets **one comment, updated in place on every push**:
 
@@ -92,64 +117,96 @@ report also goes to the job summary, and every log, PNG and text to the `termsho
 
 ## Permissions
 
-The action stores images with the workflow's own `GITHUB_TOKEN`. It needs no secret, no app and
-no service outside GitHub. What that token may do depends on the event:
+The action needs no secret, no app and no service outside GitHub: it stores images with the
+workflow's own `GITHUB_TOKEN`. It needs write access for two things, and only two:
 
-| event | token | what the action does |
+| permission | what for | without it |
 |---|---|---|
-| `push` | what `permissions:` grants | stores the branch's baseline, prunes |
-| `pull_request` from a branch of the repository | what `permissions:` grants | compares, stores, comments |
-| `pull_request` from a fork | **read-only, whatever `permissions:` says**, and no secrets | renders only; leaves the logs in the artifact |
-| `pull_request` by Dependabot | read-only | as for a fork |
-| `workflow_run` (after any of the above) | what `permissions:` grants, in the base repository | `mode: publish`: publishes what a fork run left |
+| `contents: write` | committing images to the `termshot-assets` branch | no images: set `publish: false` and the comment has the text diff only |
+| `pull-requests: write` | posting and updating the comment (`issues: write` works too) | no comment: the report is in the job summary only |
+| `actions: read` | downloading another run's artifact, in the `workflow_run` workflow | the publish workflow can't see the screens |
 
-`permissions:` can only lower the token to what the repository allows. Since 2023, new
-repositories and organizations default to read-only `GITHUB_TOKEN`s, but a workflow can still
-ask for `contents: write` and `pull-requests: write` unless an organization or enterprise policy
-forbids it.
+GitHub offers no narrower way to put an image in a comment. Its API has no upload for comment
+attachments, and a `GITHUB_TOKEN` can't create a gist. The `user-attachments` upload that the web
+UI and `gh … --attach` use accepts user tokens only (OAuth, personal access tokens, some GitHub App
+user tokens), not the `GITHUB_TOKEN`, and an image uploaded there can't be deleted.
 
-### Pull requests from forks
+### Why two workflows
 
-GitHub gives a fork's run a read-only token on purpose: that run executes the fork's code. The
-action never asks for more there. Add a second workflow, which runs from your default branch with
-a write token but never runs the fork's code:
+`contents: write` lets a token push to any branch the rules don't protect, and create tags. A job
+that builds and runs your program runs your dependencies too. `actions/checkout` leaves the token
+in `.git/config`, so a compromised dependency could push with it. Splitting the work keeps that
+token out of reach:
+
+- **`mode: render`** captures and renders with `contents: read`, and makes no API calls at all. It
+  leaves the logs, and a bundle describing them, in the `termshot-<id>` artifact.
+- **`mode: publish`** runs on `workflow_run`, from your default branch, in a job that checks out
+  nothing and runs nothing of yours. It treats the artifact as untrusted data:
+  - It reads the zip in memory, under a size limit, and never unpacks it to disk.
+  - It checks every screen name and size.
+  - It ties the bundle to the run that made it. A pull request must be open, and its head commit
+    and repository must be the run's. A push must still be the branch's head.
+  - It renders the logs with its own termshot, which is built to read hostile input, and doesn't
+    trust images from the run.
+  - It runs nothing from the artifact.
+
+What each event's token can do:
+
+| event | token | the action |
+|---|---|---|
+| `push` | what `permissions:` grants | `render`: the publish workflow stores the branch's baseline and prunes |
+| `pull_request` from a branch of the repository | what `permissions:` grants | `render`: the publish workflow compares and comments |
+| `pull_request` from a fork, or by Dependabot | **read-only, whatever `permissions:` says**, and no secrets | renders only, in any mode |
+| `workflow_run` | what `permissions:` grants, in the base repository, from the default branch | `publish` |
+
+Don't use `pull_request_target` instead: it has a write token, and checking out the fork's code
+under it is how repositories get compromised.
+
+### One workflow, two jobs
+
+If you take no pull requests from forks, one file will do. The second job downloads the first's
+artifact within the same run, so it doesn't need `actions: read`:
 
 ```yaml
-# .github/workflows/screens-publish.yml
-name: screens-publish
-on:
-  workflow_run:
-    workflows: [screens]
-    types: [completed]
-
-permissions:
-  actions: read          # download the other run's artifact
-  contents: write
-  pull-requests: write
+permissions: {}
 
 jobs:
-  publish:
-    if: github.event.workflow_run.event == 'pull_request'
+  render:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
-      - uses: momiji-rs/termshot-action@v0   # mode publish, from the event
+      - uses: actions/checkout@v4
+      - run: cargo build --release
+      - uses: momiji-rs/termshot-action@v0
+        with:
+          mode: render
+          shots: |
+            help: ./target/release/myapp --help
+
+  publish:
+    needs: render
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: termshot-termshot
+          path: screens
+      - uses: momiji-rs/termshot-action@v0
+        with:
+          bundle-dir: screens
 ```
 
-It takes the logs from the artifact as untrusted data:
+On a fork's pull request every job's token is read-only, so the publish job explains that and does
+nothing.
 
-- It reads the zip in memory, under a size limit, and never unpacks it to disk.
-- It checks every screen name and size.
-- It looks up the pull request through the API and requires its head commit and repository to be
-  the run's.
-- It renders the logs with its own termshot, built to read hostile input, and doesn't trust the
-  images the fork's run made.
-- It runs nothing from the artifact, and writes no baseline.
+### The simplest setup
 
-A run that could publish by itself marks its artifact as published, so the second workflow does
-nothing then.
-
-Don't use `pull_request_target` for this: it has a write token too, and checking out the fork's
-code under it is how repositories get compromised.
+With no `mode`, one job captures, renders and publishes, given `contents: write` and
+`pull-requests: write`. It's shorter, but your build runs while holding the write token.
 
 ### Settings that can get in the way
 
@@ -178,7 +235,8 @@ code under it is how repositories get compromised.
 | `px` | `28` | font pixel height |
 | `timeout` | `10` | seconds a shot may take |
 | `font`, `fallback-font`, `args` | | passed to termshot; give the publish workflow the same |
-| `mode` | `auto` | `run`, or `publish` (the default on `workflow_run`) |
+| `mode` | `auto` | `render` (capture only, no API calls), `run` (capture and publish), or `publish` (the default on `workflow_run`, or with `bundle-dir`) |
+| `bundle-dir` | | a downloaded artifact to publish, from an earlier `render` job of the same run |
 | `id` | `termshot` | names this set, for several uses in one repository |
 | `comment` | `auto` | `never` to skip the comment |
 | `publish` | `true` | `false` to store nothing (the comment then has text only) |

@@ -7,8 +7,10 @@ branding:
 
 inputs:
   mode:
-    description: run (capture and publish), publish (take a fork's screens from a workflow_run), or auto
+    description: run (capture and publish), render (capture only, for a read-only job), publish (from a workflow_run, or `bundle-dir`), or auto
     default: auto
+  bundle-dir:
+    description: "A downloaded termshot artifact to publish, in a job after a `mode: render` job of the same run"
   shots:
     description: |
       One shot per line, as `name: command` or `name@COLSxROWS: command`. Each command
@@ -91,6 +93,7 @@ runs:
       env:
         INPUT_TERMSHOT: ${{ steps.install.outputs.bin }}
         INPUT_MODE: ${{ inputs.mode }}
+        INPUT_BUNDLE_DIR: ${{ inputs.bundle-dir }}
         INPUT_SHOTS: ${{ inputs.shots }}
         INPUT_LOGS: ${{ inputs.logs }}
         INPUT_SIZE: ${{ inputs.size }}
@@ -112,7 +115,7 @@ runs:
       run: PYTHONDONTWRITEBYTECODE=1 python3 "$GITHUB_ACTION_PATH/termshot_action.py"
 
     - name: upload screens
-      if: always() && steps.run.outputs.dir != '' && github.event_name != 'workflow_run'
+      if: always() && steps.run.outputs.dir != '' && github.event_name != 'workflow_run' && inputs.bundle-dir == ''
       uses: actions/upload-artifact@v4
       with:
         name: termshot-${{ inputs.id }}

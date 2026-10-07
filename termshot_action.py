@@ -3,7 +3,7 @@
 
 Standard library only, so it runs on any hosted runner without a setup step.
 
-mode run (pull_request, push, anything but workflow_run):
+mode run (pull_request, push, anything but workflow_run), or render:
   capture   run each shot's command in a real PTY of its size, driven by its steps
   render    termshot each log into a PNG, its --text and its --json
   compare   against the baseline stored for the base branch. termshot is
@@ -11,13 +11,15 @@ mode run (pull_request, push, anything but workflow_run):
             is exact. A changed screen gets a cell diff that termshot draws too.
   publish   store the files on the assets branch and upsert one sticky comment.
             A push stores the branch's baseline instead, and prunes.
-  When the token can't write (a fork, Dependabot), it only renders, and leaves the
-  logs in the artifact for mode publish.
+  Mode render, or a token that can't write (a fork, Dependabot), stops after
+  rendering and leaves the logs in the artifact for mode publish, so the job that
+  runs your code never needs a write token.
 
-mode publish (workflow_run, after the run above):
+mode publish (workflow_run after that run, or a later job given `bundle-dir`):
   Takes the logs from that run's artifact as untrusted data: checks them, matches
-  the pull request through the API, renders them with its own termshot, then
-  compares and publishes as above. Nothing from the artifact is executed.
+  the pull request or the branch head through the API, renders them with its own
+  termshot, then compares and publishes as above. Nothing from the artifact is
+  executed.
 
 Inputs arrive as INPUT_* environment variables (set by action.yml). Run locally
 with TERMSHOT_DRY_RUN=1 to stop after rendering and print the comment.
@@ -314,7 +316,7 @@ def summary(body):
         print(body)
 
 
-def mode_run(renderer, out_dir):
+def mode_run(renderer, out_dir, render_only):
     default_size = capture.parse_size(inp("size", "100x30"), None)
     screens = gather(renderer, default_size, float(inp("timeout", "10")))
     check_names(screens)
@@ -328,17 +330,20 @@ def mode_run(renderer, out_dir):
     bot = os.environ.get("GITHUB_ACTOR") == "dependabot[bot]"
     ctx = make_ctx(renderer, pr["head"]["sha"] if pr else os.environ.get("GITHUB_SHA", ""),
                    pr["base"]["ref"] if pr else "", private)
-    if fork or bot:
-        log("::notice::the token here is read-only (" + ("a fork" if fork else "Dependabot")
-            + "), so the screens go to the artifact. A workflow_run workflow with this "
-            "action can publish them; see the README.")
+    if render_only or fork or bot:
+        if not render_only:
+            log("::notice::the token here is read-only (" + ("a fork" if fork else "Dependabot")
+                + "), so the screens go to the artifact. A workflow_run workflow with this "
+                "action can publish them; see the README.")
         for s in screens:
             s["status"] = "new"
         summary(report.report(ctx, screens, None, lambda p: None))
-        commented, n = False, 0
+        published, n = False, 0
     else:
         commented, n = finish(ctx, screens, renderer, pr, can_write=True)
-    bundle = {"format": 1, "id": ctx["id"], "published": commented or not pr,
+        published = commented or not pr
+    bundle = {"format": 1, "id": ctx["id"], "published": published,
+              "event": "pull_request" if pr else os.environ.get("GITHUB_EVENT_NAME", ""),
               "pr": pr["number"] if pr else None, "head_sha": ctx["sha"],
               "screens": [{"name": s["name"], "label": s["label"], "size": "%dx%d" % s["size"],
                            "note": s["note"], "steps": s["steps"], "exit": s["exit"]}
@@ -348,34 +353,98 @@ def mode_run(renderer, out_dir):
     return n
 
 
+def read_dir(path, limit):
+    """The files of a downloaded artifact, as {name: bytes}: flat, and under `limit`."""
+    files, total = {}, 0
+    for name in os.listdir(path):
+        full = os.path.join(path, name)
+        if not os.path.isfile(full) or os.path.islink(full):
+            continue
+        total += os.path.getsize(full)
+        if total > limit:
+            raise RuntimeError(f"{path} holds over {limit} bytes")
+        with open(full, "rb") as f:
+            files[name] = f.read()
+    return files
+
+
 def mode_publish(renderer):
-    run = payload().get("workflow_run")
-    if not run:
-        fail("mode publish runs on a workflow_run event")
-    if run["event"] != "pull_request":
-        log(f"::notice::nothing to publish for a {run['event']} run")
-        return 0
+    """Publish what a render-only run left. The run is named by the event: a
+    workflow_run event names the run that finished, or, with `bundle-dir`, the
+    artifact was downloaded from an earlier job of this run."""
     repo = os.environ["GITHUB_REPOSITORY"]
     gh = GitHub(inp("github-token"), repo)
     sid = inp("id", "termshot")
-    files = gh.artifact(run["id"], f"termshot-{sid}", ARTIFACT_LIMIT)
-    if files is None:
-        log(f"::notice::run {run['id']} left no termshot-{sid} artifact")
+    ev = payload()
+    if inp("bundle-dir"):
+        pr_ev = ev.get("pull_request")
+        event = "pull_request" if pr_ev else os.environ.get("GITHUB_EVENT_NAME", "")
+        anchor = {"sha": pr_ev["head"]["sha"] if pr_ev else os.environ.get("GITHUB_SHA", ""),
+                  "head_repo": pr_ev["head"]["repo"]["full_name"] if pr_ev else repo,
+                  "branch": os.environ.get("GITHUB_REF_NAME", ""), "url": ""}
+        if pr_ev and anchor["head_repo"] != repo:
+            log("::notice::a fork's run has a read-only token in every job; publish its "
+                "screens from a workflow_run workflow (see the README)")
+            return 0
+        files = read_dir(inp("bundle-dir"), ARTIFACT_LIMIT)
+    else:
+        run = ev.get("workflow_run")
+        if not run:
+            fail("mode publish runs on a workflow_run event, or with bundle-dir")
+        event = run["event"]
+        anchor = {"sha": run["head_sha"], "branch": run.get("head_branch") or "",
+                  "head_repo": (run.get("head_repository") or {}).get("full_name"),
+                  "url": run.get("html_url", "")}
+        files = gh.artifact(run["id"], f"termshot-{sid}", ARTIFACT_LIMIT)
+        if files is None:
+            log(f"::notice::run {run['id']} left no termshot-{sid} artifact")
+            return 0
+    if event not in ("pull_request", "push"):
+        log(f"::notice::nothing to publish for a {event} run")
         return 0
+    if BUNDLE not in files:
+        fail("the artifact has no bundle")
     bundle = json.loads(files[BUNDLE])
     if bundle.get("published"):
         log("::notice::that run already published its screens")
         return 0
     # Everything below comes from code we did not review: check it all.
-    if bundle.get("format") != 1 or bundle.get("id") != sid or not isinstance(bundle.get("pr"), int):
-        fail("the artifact's bundle is not one this action wrote")
-    pr = gh.call("GET", f"/pulls/{bundle['pr']}", ok404=True)
-    if not pr or pr["head"]["sha"] != run["head_sha"] or \
-            pr["head"]["repo"]["full_name"] != (run.get("head_repository") or {}).get("full_name"):
-        fail(f"pull request #{bundle['pr']} is not the one run {run['id']} was for")
-    if pr["state"] != "open":
-        log("::notice::the pull request is closed")
-        return 0
+    if bundle.get("format") != 1 or bundle.get("id") != sid or bundle.get("head_sha") != anchor["sha"]:
+        fail("the artifact's bundle is not one this action wrote for this run")
+    if event == "pull_request":
+        if not isinstance(bundle.get("pr"), int):
+            fail("the bundle names no pull request")
+        pr = gh.call("GET", f"/pulls/{bundle['pr']}", ok404=True)
+        if not pr or pr["head"]["repo"]["full_name"] != anchor["head_repo"]:
+            fail(f"pull request #{bundle['pr']} is not the one this run was for")
+        if pr["head"]["sha"] != anchor["sha"]:
+            log("::notice::the pull request has newer commits; their run will publish")
+            return 0
+        if pr["state"] != "open":
+            log("::notice::the pull request is closed")
+            return 0
+    else:
+        pr = None
+        if anchor["head_repo"] != repo or not anchor["branch"]:
+            fail("a push run from another repository")
+        head = gh.call("GET", f"/branches/{quote(anchor['branch'], safe='')}", ok404=True)
+        if not head or head["commit"]["sha"] != anchor["sha"]:
+            log(f"::notice::{anchor['branch']} has moved on; the newer run will store its baseline")
+            return 0
+    screens = bundle_screens(bundle, files)
+    for s in screens:
+        renderer.render(s)
+    if pr:
+        ctx = make_ctx(renderer, pr["head"]["sha"], pr["base"]["ref"], pr["base"]["repo"]["private"])
+    else:
+        ctx = make_ctx(renderer, anchor["sha"], "", (ev.get("repository") or {}).get("private", True))
+        ctx["ref"] = anchor["branch"]
+    ctx["run_url"] = anchor["url"] or ctx["run_url"]
+    _, n = finish(ctx, screens, renderer, pr, can_write=True)
+    return n
+
+
+def bundle_screens(bundle, files):
     items = bundle.get("screens")
     if not isinstance(items, list) or not 0 < len(items) <= MAX_SCREENS:
         fail("the bundle has no screens, or too many")
@@ -395,13 +464,7 @@ def mode_publish(renderer):
             "steps": it["steps"] if isinstance(it.get("steps"), int) else 0,
             "exit": ex if isinstance(ex, int) and not isinstance(ex, bool) else None})
     check_names(screens)
-    for s in screens:
-        renderer.render(s)
-    private = pr["base"]["repo"]["private"]
-    ctx = make_ctx(renderer, pr["head"]["sha"], pr["base"]["ref"], private)
-    ctx["run_url"] = run.get("html_url", "")
-    _, n = finish(ctx, screens, renderer, pr, can_write=True)
-    return n
+    return screens
 
 
 def main():
@@ -414,9 +477,15 @@ def main():
     renderer = Renderer(inp("termshot", "termshot"), out_dir)
     mode = inp("mode", "auto")
     if mode == "auto":
-        mode = "publish" if os.environ.get("GITHUB_EVENT_NAME") == "workflow_run" else "run"
+        on_run = os.environ.get("GITHUB_EVENT_NAME") == "workflow_run"
+        mode = "publish" if on_run or inp("bundle-dir") else "run"
+    if mode not in ("run", "render", "publish"):
+        fail(f"mode must be auto, run, render or publish, not {mode!r}")
     try:
-        n = mode_publish(renderer) if mode == "publish" else mode_run(renderer, out_dir)
+        if mode == "publish":
+            n = mode_publish(renderer)
+        else:
+            n = mode_run(renderer, out_dir, render_only=mode == "render")
     except (capture.SpecError, RuntimeError) as e:
         fail(str(e))
     if n and inp("fail-on-change") == "true":

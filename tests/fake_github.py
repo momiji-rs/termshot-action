@@ -11,7 +11,7 @@ from urllib.parse import unquote, urlparse
 class State:
     def __init__(self):
         self.blobs, self.trees, self.commits, self.refs = {}, {}, {}, {}
-        self.comments, self.pulls, self.branches = [], {}, {"main"}
+        self.comments, self.pulls, self.branches = [], {}, {"main": "2" * 40}
         self.artifacts = {}  # run id -> [(name, zip bytes)]
         self.calls = []
 
@@ -92,7 +92,8 @@ def serve(state):
                 state.refs[name] = b["sha"]
                 return self.send(200, {})
             if p[0] == "branches":
-                return self.send(200 if "/".join(p[1:]) in state.branches else 404, {})
+                head = state.branches.get("/".join(p[1:]))
+                return self.send(200, {"commit": {"sha": head}}) if head else self.send(404, {})
             if p[0] == "pulls":
                 pr = state.pulls.get(int(p[1]))
                 return self.send(200, pr) if pr else self.send(404, {})

@@ -21,3 +21,5 @@ jobs:
         env:
           VERSION: 0.2.0
       - run: python3 tests/run.py "${{ steps.install.outputs.bin }}"
+      - name: action.yml and workflows parse as YAML
+        run: ruby -ryaml -e 'Dir["{action.yml,.github/workflows/*.yml}"].each { |f| YAML.load_file(f) }'
