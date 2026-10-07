@@ -42,3 +42,14 @@ jobs:
           id: bubbletea
           logs: examples/bubbletea/testdata/*.golden@48x12
           args: --lf-newline
+
+      # The Ratatui guide's example (docs/ratatui.md): insta keeps an ANSI
+      # snapshot of each screen beside its text snapshot. cargo test fails if one
+      # is out of date (under CI, insta doesn't accept new snapshots).
+      - run: cargo test --locked
+        working-directory: examples/ratatui
+      - uses: ./
+        with:
+          mode: render
+          id: ratatui
+          logs: examples/ratatui/src/snapshots/*.snap.ansi@40x10

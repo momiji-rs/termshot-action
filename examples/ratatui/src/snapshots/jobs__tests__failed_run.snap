@@ -1,0 +1,6 @@
+---
+source: src/tests.rs
+expression: "ansi(40, 10, &app)"
+extension: ansi
+snapshot_kind: binary
+---

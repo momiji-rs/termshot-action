@@ -26,3 +26,6 @@ jobs:
         with:
           id: bubbletea
           args: --lf-newline
+      - uses: ./
+        with:
+          id: ratatui
