@@ -1,5 +1,5 @@
 {
- "commit": "17cc6876d6e221587b94b4786185b65b7c24f448",
+ "commit": "c0f334263e2ef7dc47d9761ec5ea85b9c3dc42a5",
  "shots": {
   "menu": {
    "json": "objects/2e/2e38af3f25d5b7857071d6a3948e41e8eb53183116229ace1a69b05137f9e770.json",
@@ -13,5 +13,5 @@
   }
  },
  "termshot": "0.3.0",
- "updated": "2026-10-07T21:04:27+00:00"
+ "updated": "2026-10-07T21:18:07+00:00"
 }
