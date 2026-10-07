@@ -71,6 +71,11 @@ Each pull request gets **one comment, updated in place on every push**:
 - **new** screens are shown in full, and **removed** ones are listed
 - **unchanged** screens fold into one line
 
+## Guides
+
+- [Bubble Tea](docs/bubbletea.md): your teatest golden files are already screenshots. Point `logs` at
+  `testdata/*.golden`, and each pull request shows the screens its tests check.
+
 ## Shots
 
 A shot is `name: command`, or `name@COLSxROWS: command` for a size other than `size`. The

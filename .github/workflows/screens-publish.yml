@@ -22,3 +22,7 @@ jobs:
         with:
           size: 34x11
           px: '32'
+      - uses: ./
+        with:
+          id: bubbletea
+          args: --lf-newline
