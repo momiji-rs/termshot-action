@@ -26,3 +26,19 @@ jobs:
               key down down
               key enter
               wait-for Opened
+
+      # The Bubble Tea guide's example (docs/bubbletea.md): its teatest golden
+      # files are its screens. go test fails if a golden is out of date, so
+      # what is screenshot is what the tests check.
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: examples/bubbletea/go.mod
+          cache-dependency-path: examples/bubbletea/go.sum
+      - run: go test ./...
+        working-directory: examples/bubbletea
+      - uses: ./
+        with:
+          mode: render
+          id: bubbletea
+          logs: examples/bubbletea/testdata/*.golden@48x12
+          args: --lf-newline
