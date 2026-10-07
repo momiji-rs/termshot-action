@@ -237,9 +237,9 @@ With no `mode`, one job captures, renders and publishes, given `contents: write`
 - **Rulesets and branch protection.** A ruleset that targets all branches can stop
   `GITHUB_TOKEN` from creating `termshot-assets` or force-pushing it when pruning. Exclude the
   branch from the ruleset, or set `retention-days: 0`.
-- **Private repositories.** Image URLs are `github.com/<repo>/raw/termshot-assets/…`. Signed out,
-  they return 404, and so do API tokens. Whether a signed-in viewer's browser shows them is not
-  verified yet. A fork of a private
+- **Private repositories.** Image URLs are `github.com/<repo>/raw/termshot-assets/…`. A
+  signed-in viewer with access sees them in the comment. Signed out, or with an API token, they
+  return 404 (verified 2026-10-07). A fork of a private
   repository gets a write token only if the repository allows it ("Send write tokens to workflows
   from pull requests").
 - **Keeping images out of the repository.** Set `assets-repo` to another repository you own, and
