@@ -7,6 +7,18 @@ version numbers follow [Semantic Versioning](https://semver.org/). Pushing a tag
 
 ## [Unreleased]
 
+### Added
+
+- A guide for Bubble Tea, docs/bubbletea.md, which turns teatest golden files into pull request
+  screenshots. It covers the three settings that make a golden file the same on every machine,
+  `WaitFor` consuming output, and the alternate screen. Its example, examples/bubbletea, runs
+  in this repository's screens workflow.
+
+### Fixed
+
+- install-core.sh and install.sh check the download with sha256sum when the runner has no
+  shasum, as on Arch Linux, and print the path when there is no GITHUB_OUTPUT.
+
 ## [0.4.0] - 2026-10-07
 
 ### Changed
