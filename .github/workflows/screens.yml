@@ -53,3 +53,20 @@ jobs:
           mode: render
           id: ratatui
           logs: examples/ratatui/src/snapshots/*.snap.ansi@40x10
+
+      # The Ink guide's example (docs/ink.md): each test writes the frame it
+      # checks with toMatchFileSnapshot, in colour. Vitest fails if one is out of
+      # date (under CI it doesn't write new snapshots).
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: examples/ink/package-lock.json
+      - run: npm ci && npm test
+        working-directory: examples/ink
+      - uses: ./
+        with:
+          mode: render
+          id: ink
+          logs: examples/ink/src/__screens__/*.ansi@40x8
+          args: --lf-newline
