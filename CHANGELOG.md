@@ -7,6 +7,15 @@ version numbers follow [Semantic Versioning](https://semver.org/). Pushing a tag
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-10-07
+
+### Fixed
+
+- With `images: bundle`, the report and the baseline named the publish job's
+  termshot, not the render job's that made the images. The render job now records
+  its version in the bundle, and the publish job shows it, or `?` if it isn't a
+  plain version string.
+
 ## [0.3.0] - 2026-10-07
 
 ### Added
@@ -75,7 +84,8 @@ version numbers follow [Semantic Versioning](https://semver.org/). Pushing a tag
 - Pull requests from forks are published by a `workflow_run` workflow, which
   treats the artifact as untrusted data.
 
-[Unreleased]: https://github.com/momiji-rs/termshot-action/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/momiji-rs/termshot-action/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/momiji-rs/termshot-action/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/momiji-rs/termshot-action/compare/v0.2.2...v0.3.0
 [0.2.2]: https://github.com/momiji-rs/termshot-action/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/momiji-rs/termshot-action/compare/v0.2.0...v0.2.1

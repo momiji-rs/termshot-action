@@ -248,6 +248,14 @@ def main():
     h = hashlib.sha256(png).hexdigest()
     check(f"objects/{h[:2]}/{h}.png" in S.files() and h in comment(13)[0],
           "the stored image is the render job's, not a re-render")
+    for version, shown in (("9.9.9-test", "9.9.9-test"), ("<b>x</b>", "?")):
+        b13 = json.load(open(os.path.join(out, ".termshot-bundle.json")))
+        b13["termshot"] = version
+        json.dump(b13, open(os.path.join(out, ".termshot-bundle.json"), "w"))
+        run({"INPUT_BUNDLE_DIR": out, "INPUT_IMAGES": "bundle"}, "pull_request",
+            pr_event(13, "c" * 40), tmp)
+        check(f"termshot](https://github.com/momiji-rs/termshot) {shown} at" in comment(13)[0],
+              f"the report names the render job's termshot: {version!r} shows as {shown!r}")
     bad = tempfile.mkdtemp(dir=tmp)
     for n in os.listdir(out):
         data = open(os.path.join(out, n), "rb").read()

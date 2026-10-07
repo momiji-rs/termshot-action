@@ -351,6 +351,7 @@ def mode_run(renderer, out_dir, render_only):
         commented, n = finish(ctx, screens, renderer, pr, can_write=True)
         published = commented or not pr
     bundle = {"format": 1, "id": ctx["id"], "published": published,
+              "termshot": renderer.version,
               "event": "pull_request" if pr else os.environ.get("GITHUB_EVENT_NAME", ""),
               "pr": pr["number"] if pr else None, "head_sha": ctx["sha"],
               "screens": [{"name": s["name"], "label": s["label"], "size": "%dx%d" % s["size"],
@@ -382,6 +383,7 @@ def still_current(pr, ctx):
 
 
 HEX = re.compile(r"^#[0-9a-f]{6}$")
+VERSION_RE = re.compile(r"^[0-9A-Za-z][0-9A-Za-z.+-]{0,39}$")
 
 
 def load_rendered(s, files):
@@ -504,6 +506,10 @@ def mode_publish(renderer):
             log(f"::notice::{anchor['branch']} has moved on; the newer run will store its baseline")
             return 0
     screens = bundle_screens(bundle, files)
+    if images == "bundle":
+        # The images are the render job's, so the report names its termshot.
+        v = bundle.get("termshot")
+        renderer.version = v if isinstance(v, str) and VERSION_RE.match(v) else "?"
     for s in screens:
         if images == "bundle":
             load_rendered(s, files)
