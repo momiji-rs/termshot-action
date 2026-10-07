@@ -53,6 +53,7 @@ def run(env, event_name, event, tmp, expect=0):
 
 
 def push(branch, sha, shots, tmp, **env):
+    S.branches[branch] = sha  # the run's commit is the branch's head
     return run(dict(GITHUB_REF_NAME=branch, GITHUB_SHA=sha, INPUT_SHOTS=shots, **env),
                "push", {"repository": {"private": False}}, tmp)
 
@@ -214,12 +215,63 @@ def main():
     m = json.loads(S.files()["baseline/termshot/main.json"])
     check(m["commit"] == "3" * 40, "workflow_run stores the baseline of a push")
 
+    print("== the commands a shot runs get no credentials")
+    # Prints only the names it looks for, so a run never shows other variables.
+    probe = ("env: env | cut -d= -f1 | grep -E '^(INPUT_|GITHUB_TOKEN$|GH_TOKEN$|ACTIONS_)' "
+             "| sort; echo \"TERM=$TERM\"")
+    out, _, _ = run({"INPUT_SHOTS": probe, "TERMSHOT_DRY_RUN": "1", "GITHUB_TOKEN": "x",
+                     "GH_TOKEN": "x", "ACTIONS_RUNTIME_TOKEN": "y"}, "push", {}, tmp)
+    seen = open(os.path.join(out, "env.txt")).read().split()
+    check(seen == ["TERM=xterm-256color"], f"no credentials in a shot's environment: {seen}")
+
+    print("== a run for an outdated commit doesn't publish")
+    ev = pr_event(12, "1" * 39 + "2")
+    S.pulls[12] = dict(S.pulls[12], head=dict(S.pulls[12]["head"], sha="9" * 40))
+    _, _, r = run({"INPUT_SHOTS": GREET2}, "pull_request", ev, tmp)
+    check("no longer the head" in r.stderr and comment(12)[1] == 0, "an outdated PR run")
+    S.branches["main"] = "8" * 40
+    _, _, r = run({"INPUT_SHOTS": GREET, "GITHUB_REF_NAME": "main", "GITHUB_SHA": "7" * 40},
+                  "push", {"repository": {"private": False}}, tmp)
+    m = json.loads(S.files()["baseline/termshot/main.json"])
+    check("no longer the head" in r.stderr and m["commit"] != "7" * 40, "an outdated push run")
+
+    print("== images: bundle publishes the render job's own images, checked")
+    out, _, _ = run({"INPUT_SHOTS": GREET2, "INPUT_MODE": "render",
+                     "INPUT_ARGS": "--px 20"}, "pull_request", pr_event(13, "c" * 40), tmp)
+    png = open(os.path.join(out, "greet.png"), "rb").read()
+    run({"INPUT_BUNDLE_DIR": out, "INPUT_IMAGES": "bundle"}, "pull_request",
+        pr_event(13, "c" * 40), tmp)
+    import hashlib
+    h = hashlib.sha256(png).hexdigest()
+    check(f"objects/{h[:2]}/{h}.png" in S.files() and h in comment(13)[0],
+          "the stored image is the render job's, not a re-render")
+    bad = tempfile.mkdtemp(dir=tmp)
+    for n in os.listdir(out):
+        data = open(os.path.join(out, n), "rb").read()
+        open(os.path.join(bad, n), "wb").write(b"<svg/>" if n == "greet.png" else data)
+    _, _, r = run({"INPUT_BUNDLE_DIR": bad, "INPUT_IMAGES": "bundle"}, "pull_request",
+                  pr_event(13, "c" * 40), tmp, expect=1)
+    check("greet.png is not a PNG" in r.stdout, "a file that isn't a PNG is refused")
+    for n in os.listdir(out):
+        data = open(os.path.join(out, n), "rb").read()
+        if n == "greet.json":
+            data = data.replace(b'"#', b'"javascript:#', 1)
+        open(os.path.join(bad, n), "wb").write(data)
+    _, _, r = run({"INPUT_BUNDLE_DIR": bad, "INPUT_IMAGES": "bundle"}, "pull_request",
+                  pr_event(13, "c" * 40), tmp, expect=1)
+    check("is not a termshot --json screen" in r.stdout, "a JSON that isn't termshot's is refused")
+    out, _, _ = run({"INPUT_SHOTS": GREET2, "INPUT_MODE": "render"}, "pull_request",
+                    pr_event(14, "d" * 40, head_repo="someone/r"), tmp)
+    artifact(62, {n: open(os.path.join(out, n), "rb").read() for n in os.listdir(out)})
+    calls = len(S.calls)
+    _, _, r = run({"INPUT_IMAGES": "bundle"}, "workflow_run", wr(62, "d" * 40), tmp)
+    check("not a fork's" in r.stderr and comment(14)[1] == 0, "images: bundle never takes a fork's")
+
     print("== pruning")
     S.pulls[7].update(state="closed", closed_at="2020-01-01T00:00:00Z")
     S.pulls[8].update(state="closed", closed_at="2099-01-01T00:00:00Z")
     pr8 = {p for p in S.files() if p == "pr/termshot/8.json"}
     before = set(S.files())
-    S.branches["main"] = "4" * 40
     push("main", "4" * 40, GREET, tmp)
     after = set(S.files())
     check("pr/termshot/7.json" not in after, "an old closed PR's manifest goes")

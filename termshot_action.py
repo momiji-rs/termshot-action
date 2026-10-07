@@ -18,8 +18,9 @@ mode run (pull_request, push, anything but workflow_run), or render:
 mode publish (workflow_run after that run, or a later job given `bundle-dir`):
   Takes the logs from that run's artifact as untrusted data: checks them, matches
   the pull request or the branch head through the API, renders them with its own
-  termshot, then compares and publishes as above. Nothing from the artifact is
-  executed.
+  termshot (or, with `images: bundle`, takes the images it rendered, checked, from
+  this repository's own branches only), then compares and publishes as above.
+  Nothing from the artifact is executed.
 
 Inputs arrive as INPUT_* environment variables (set by action.yml). Run locally
 with TERMSHOT_DRY_RUN=1 to stop after rendering and print the comment.
@@ -31,6 +32,7 @@ import hashlib
 import json
 import os
 import re
+import struct
 import subprocess
 import sys
 from urllib.parse import quote
@@ -80,7 +82,8 @@ class Renderer:
         if inp("fallback-font"):
             args += ["--fallback-font", inp("fallback-font")]
         self.args = args + inp("args").split()
-        r = subprocess.run([termshot, "--version"], capture_output=True, text=True)
+        r = subprocess.run([termshot, "--version"], capture_output=True, text=True,
+                           env=capture.child_env())
         self.version = r.stdout.split()[-1] if r.returncode == 0 else "?"
 
     def render(self, screen, extra=()):
@@ -91,7 +94,8 @@ class Renderer:
             f.write(screen["log"])
         r = subprocess.run([self.termshot, *self.args, "--size", f"{cols}x{rows}", *extra,
                             "--text", stem + ".txt", "--json", stem + ".json",
-                            stem + ".pty", stem + ".png"], capture_output=True, text=True)
+                            stem + ".pty", stem + ".png"], capture_output=True, text=True,
+                           env=capture.child_env())
         if r.stderr.strip():
             log(f"{screen['name']}: {r.stderr.strip()}")
         if r.returncode:
@@ -339,6 +343,10 @@ def mode_run(renderer, out_dir, render_only):
             s["status"] = "new"
         summary(report.report(ctx, screens, None, lambda p: None))
         published, n = False, 0
+    elif not still_current(pr, ctx):
+        summary(report.report(ctx, [dict(s, status="new") for s in screens], None,
+                              lambda p: None))
+        published, n = True, 0  # a newer run publishes; this one must not overwrite it
     else:
         commented, n = finish(ctx, screens, renderer, pr, can_write=True)
         published = commented or not pr
@@ -351,6 +359,63 @@ def mode_run(renderer, out_dir, render_only):
     with open(os.path.join(out_dir, BUNDLE), "w") as f:
         json.dump(bundle, f, indent=1)
     return n
+
+
+def still_current(pr, ctx):
+    """Whether this run's commit is still the pull request's head, or the branch's,
+    so an older run that finishes last can't overwrite a newer one's screens."""
+    token, repo = inp("github-token"), os.environ.get("GITHUB_REPOSITORY", "")
+    if not token or not repo or os.environ.get("TERMSHOT_DRY_RUN"):
+        return True
+    gh = GitHub(token, repo)
+    if pr:
+        now_pr = gh.call("GET", f"/pulls/{pr['number']}", ok404=True)
+        head = now_pr and now_pr["head"]["sha"]
+    else:
+        b = gh.call("GET", f"/branches/{quote(ctx['ref'], safe='')}", ok404=True)
+        head = b and b["commit"]["sha"]
+    if head and head != ctx["sha"]:
+        log(f"::notice::{ctx['sha'][:7]} is no longer the head ({head[:7]} is); "
+            "the newer run will publish")
+        return False
+    return True
+
+
+HEX = re.compile(r"^#[0-9a-f]{6}$")
+
+
+def load_rendered(s, files):
+    """Take a screen's PNG, text and JSON from a render job's artifact instead of
+    rendering it again (images: bundle). They come from code we did not review, so
+    each is checked to be what termshot writes, within limits."""
+    name, (cols, rows) = s["name"], s["size"]
+    png, txt, js = (files.get(f"{name}.{e}") for e in ("png", "txt", "json"))
+    if png is None or txt is None or js is None:
+        fail(f"the artifact lacks the PNG, text or JSON of {name}")
+    if len(png) > 32 << 20 or png[:8] != b"\x89PNG\r\n\x1a\n" or png[12:16] != b"IHDR":
+        fail(f"{name}.png is not a PNG")
+    w, h = struct.unpack(">II", png[16:24])
+    if not (0 < w <= 16384 and 0 < h <= 16384):
+        fail(f"{name}.png is {w}x{h}, over the limit")
+    if len(txt) > 1 << 20 or len(js) > 16 << 20:
+        fail(f"the text or JSON of {name} is too big")
+    try:
+        grid = json.loads(js)
+        good = grid["cols"] == cols and grid["rows"] == rows and \
+            isinstance(grid["lines"], list) and len(grid["lines"]) <= rows
+        for runs in grid["lines"]:
+            good = good and isinstance(runs, list)
+            for r in runs if good else []:
+                good = good and isinstance(r, dict) and isinstance(r.get("col"), int) and \
+                    0 <= r["col"] < cols and isinstance(r.get("text"), str) and \
+                    len(r["text"]) <= 4 * cols and \
+                    all(isinstance(r.get(k), str) and HEX.match(r[k]) for k in ("fg", "bg"))
+    except (ValueError, KeyError, TypeError):
+        good = False
+    if not good:
+        fail(f"{name}.json is not a termshot --json screen of {cols}x{rows}")
+    s["png"], s["json"] = png, js
+    s["text"] = txt.decode("utf-8", "replace").rstrip("\n")
 
 
 def read_dir(path, limit):
@@ -376,6 +441,9 @@ def mode_publish(renderer):
     gh = GitHub(inp("github-token"), repo)
     sid = inp("id", "termshot")
     ev = payload()
+    images = inp("images", "rerender")
+    if images not in ("rerender", "bundle"):
+        fail(f"images must be rerender or bundle, not {images!r}")
     if inp("bundle-dir"):
         pr_ev = ev.get("pull_request")
         event = "pull_request" if pr_ev else os.environ.get("GITHUB_EVENT_NAME", "")
@@ -401,6 +469,10 @@ def mode_publish(renderer):
             return 0
     if event not in ("pull_request", "push"):
         log(f"::notice::nothing to publish for a {event} run")
+        return 0
+    if images == "bundle" and anchor["head_repo"] != repo:
+        log("::notice::images: bundle publishes only runs of this repository's own "
+            "branches, not a fork's")
         return 0
     if BUNDLE not in files:
         fail("the artifact has no bundle")
@@ -433,7 +505,10 @@ def mode_publish(renderer):
             return 0
     screens = bundle_screens(bundle, files)
     for s in screens:
-        renderer.render(s)
+        if images == "bundle":
+            load_rendered(s, files)
+        else:
+            renderer.render(s)
     if pr:
         ctx = make_ctx(renderer, pr["head"]["sha"], pr["base"]["ref"], pr["base"]["repo"]["private"])
     else:

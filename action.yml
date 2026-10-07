@@ -9,6 +9,9 @@ inputs:
   mode:
     description: run (capture and publish), render (capture only, for a read-only job), publish (from a workflow_run, or `bundle-dir`), or auto
     default: auto
+  images:
+    description: "In mode publish: rerender (render the logs with this action's termshot) or bundle (use the images the render job made, from this repository's branches only)"
+    default: rerender
   bundle-dir:
     description: "A downloaded termshot artifact to publish, in a job after a `mode: render` job of the same run"
   shots:
@@ -94,6 +97,7 @@ runs:
         INPUT_TERMSHOT: ${{ steps.install.outputs.bin }}
         INPUT_MODE: ${{ inputs.mode }}
         INPUT_BUNDLE_DIR: ${{ inputs.bundle-dir }}
+        INPUT_IMAGES: ${{ inputs.images }}
         INPUT_SHOTS: ${{ inputs.shots }}
         INPUT_LOGS: ${{ inputs.logs }}
         INPUT_SIZE: ${{ inputs.size }}

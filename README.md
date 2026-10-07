@@ -225,10 +225,45 @@ jobs:
 On a fork's pull request every job's token is read-only, so the publish job explains that and does
 nothing.
 
+### When the renderer is what you test
+
+The publish job renders the logs again with the action's own termshot, so it never trusts
+images from the render job. If your project's change *is* the rendering (a renderer, a
+terminal emulator, termshot itself), that hides the change. Use `images: bundle` instead: the
+publish job takes the PNG, text and JSON the render job made, as untrusted data. Each must be
+what termshot writes: a PNG under 16384 px a side, a `--json` screen of the shot's size with
+`#rrggbb` colours, under size limits. It only takes these from runs of the repository's own
+branches, never a fork's.
+
+```yaml
+  publish:
+    needs: render
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: termshot-termshot
+          path: screens
+      - uses: momiji-rs/termshot-action@v0
+        with:
+          bundle-dir: screens
+          images: bundle
+```
+
 ### The simplest setup
 
 With no `mode`, one job captures, renders and publishes, given `contents: write` and
-`pull-requests: write`. It's shorter, but your build runs while holding the write token.
+`pull-requests: write`. It's shorter, but everything that job runs holds the write token: your
+build, the commands of your shots, and the termshot it renders with. The action gives the
+commands it runs an environment without `INPUT_*` and token variables, but that is defence in
+depth, not a boundary: a program in the job can still read its parent's environment. Use it only
+for code you trust as much as the token.
+
+A run whose commit is no longer the pull request's head, or the branch's, doesn't publish, so an
+older run that finishes last can't overwrite a newer one. A `concurrency` group with
+`cancel-in-progress: true` saves the run as well.
 
 ### Settings that can get in the way
 
@@ -260,6 +295,7 @@ With no `mode`, one job captures, renders and publishes, given `contents: write`
 | `font`, `fallback-font`, `args` | | passed to termshot; give the publish workflow the same |
 | `mode` | `auto` | `render` (capture only, no API calls), `run` (capture and publish), or `publish` (the default on `workflow_run`, or with `bundle-dir`) |
 | `bundle-dir` | | a downloaded artifact to publish, from an earlier `render` job of the same run |
+| `images` | `rerender` | in mode publish, `bundle` uses the render job's images (checked, own branches only) |
 | `id` | `termshot` | names this set, for several uses in one repository |
 | `comment` | `auto` | `never` to skip the comment |
 | `publish` | `true` | `false` to store nothing (the comment then has text only) |

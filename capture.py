@@ -32,6 +32,23 @@ class SpecError(ValueError):
     pass
 
 
+# Credentials in the step's environment. The commands a shot runs, and termshot
+# itself, get an environment without them. This is defence in depth, not a
+# boundary: a program in the same job can still read its parent's environment,
+# so a job that runs code it doesn't trust should hold no write token at all
+# (mode render).
+SECRET_ENV = ("GITHUB_TOKEN", "GH_TOKEN", "ACTIONS_RUNTIME_TOKEN", "ACTIONS_RUNTIME_URL",
+              "ACTIONS_ID_TOKEN_REQUEST_TOKEN", "ACTIONS_ID_TOKEN_REQUEST_URL",
+              "ACTIONS_RESULTS_URL", "ACTIONS_CACHE_URL")
+
+
+def child_env(**extra):
+    env = {k: v for k, v in os.environ.items()
+           if not k.startswith("INPUT_") and k not in SECRET_ENV}
+    env.update(extra)
+    return env
+
+
 def key_bytes(name):
     low = name.lower()
     if low in KEYS:
@@ -111,7 +128,7 @@ class Session:
         self.master, slave = os.openpty()
         # Size the terminal before the program starts, so its first query sees it.
         fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack("HHHH", rows, cols, 0, 0))
-        env = dict(os.environ, TERM="xterm-256color", COLUMNS=str(cols), LINES=str(rows))
+        env = child_env(TERM="xterm-256color", COLUMNS=str(cols), LINES=str(rows))
 
         def child_setup():
             os.setsid()
@@ -177,7 +194,7 @@ def screen_text(termshot, data, cols, rows):
         f.write(data)
         f.flush()
         r = subprocess.run([termshot, "--size", f"{cols}x{rows}", "--text", "-", f.name],
-                           capture_output=True)
+                           capture_output=True, env=child_env())
     return r.stdout.decode("utf-8", "replace")
 
 

@@ -7,6 +7,29 @@ version numbers follow [Semantic Versioning](https://semver.org/). Pushing a tag
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-07
+
+### Added
+
+- `images: bundle` for mode publish: use the PNG, text and JSON the render job made
+  instead of rendering the logs again, for projects whose change is the rendering.
+  They are checked as untrusted data (a PNG within size limits, a termshot `--json`
+  screen of the shot's size) and taken only from runs of the repository's own
+  branches.
+
+### Changed
+
+- The commands a shot runs, and termshot itself, get an environment without
+  `INPUT_*`, `GITHUB_TOKEN`, `GH_TOKEN` and the runner's `ACTIONS_*` credentials.
+  This is defence in depth: a job that runs code it doesn't trust should still hold
+  no write token (mode render).
+
+### Fixed
+
+- Mode run no longer publishes for a commit that is no longer the pull request's
+  head or the branch's, so an older run finishing last can't overwrite a newer
+  run's comment or baseline. Mode publish already checked this.
+
 ## [0.2.2] - 2026-10-07
 
 ### Changed
@@ -52,7 +75,8 @@ version numbers follow [Semantic Versioning](https://semver.org/). Pushing a tag
 - Pull requests from forks are published by a `workflow_run` workflow, which
   treats the artifact as untrusted data.
 
-[Unreleased]: https://github.com/momiji-rs/termshot-action/compare/v0.2.2...HEAD
+[Unreleased]: https://github.com/momiji-rs/termshot-action/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/momiji-rs/termshot-action/compare/v0.2.2...v0.3.0
 [0.2.2]: https://github.com/momiji-rs/termshot-action/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/momiji-rs/termshot-action/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/momiji-rs/termshot-action/compare/v0.1.0...v0.2.0
