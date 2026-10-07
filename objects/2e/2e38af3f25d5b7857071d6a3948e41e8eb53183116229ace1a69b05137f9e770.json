@@ -1,0 +1,13 @@
+{"cols":34,"rows":11,"cursor":null,"lines":[
+[{"col":0,"text":"╭─ termshot demo ─────────────╮","fg":"#00cdcd","bg":"#111823","bold":true}],
+[{"col":0,"text":"│","fg":"#00cdcd","bg":"#111823","bold":true},{"col":1,"text":"    Inbox                    ","fg":"#dbe7f7","bg":"#111823"},{"col":30,"text":"│","fg":"#00cdcd","bg":"#111823","bold":true}],
+[{"col":0,"text":"│","fg":"#00cdcd","bg":"#111823","bold":true},{"col":1,"text":"    Drafts                   ","fg":"#dbe7f7","bg":"#111823"},{"col":30,"text":"│","fg":"#00cdcd","bg":"#111823","bold":true}],
+[{"col":0,"text":"│","fg":"#00cdcd","bg":"#111823","bold":true},{"col":1,"text":" ","fg":"#dbe7f7","bg":"#111823"},{"col":2,"text":" ▸ Sent                     ","fg":"#111823","bg":"#dbe7f7"},{"col":30,"text":"│","fg":"#00cdcd","bg":"#111823","bold":true}],
+[{"col":0,"text":"│","fg":"#00cdcd","bg":"#111823","bold":true},{"col":1,"text":"    Archive                  ","fg":"#dbe7f7","bg":"#111823"},{"col":30,"text":"│","fg":"#00cdcd","bg":"#111823","bold":true}],
+[{"col":0,"text":"│","fg":"#00cdcd","bg":"#111823","bold":true},{"col":1,"text":"    Settings                 ","fg":"#dbe7f7","bg":"#111823"},{"col":30,"text":"│","fg":"#00cdcd","bg":"#111823","bold":true}],
+[{"col":0,"text":"╰─────────────────────────────╯","fg":"#00cdcd","bg":"#111823","bold":true}],
+[{"col":0,"text":" ↑↓ move · enter pick · q quit","fg":"#97a2b0","bg":"#111823"}],
+[],
+[{"col":0,"text":" Opened ","fg":"#dbe7f7","bg":"#111823"},{"col":8,"text":"Sent","fg":"#cdcd00","bg":"#111823","bold":true}],
+[]
+]}
