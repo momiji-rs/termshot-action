@@ -1,5 +1,5 @@
 {
- "commit": "2441030314d082afa669f0a3704e6f0e4aff50d2",
+ "commit": "2782f81bd99afa7c7126d015c886a2735d6d6543",
  "shots": {
   "jobs__tests__failed_run.snap": {
    "json": "objects/c0/c0e0a19bd0b2766980b7fcabef8e63eebfd811d0cb18349069100b8e70641612.json",
@@ -13,5 +13,5 @@
   }
  },
  "termshot": "0.3.0",
- "updated": "2026-10-07T21:39:14+00:00"
+ "updated": "2026-10-07T21:55:24+00:00"
 }
