@@ -10,7 +10,7 @@ Screenshot your CLI or TUI in CI, and see on the pull request what changed.
 Two workflows, so the job that runs your code never holds a write token:
 
 ```yaml
-# .github/workflows/screens.yml: builds and runs your program, read-only
+# .github/workflows/screens.yml: builds and runs your program, can't write
 name: screens
 on:
   pull_request:
@@ -18,7 +18,7 @@ on:
     branches: [main]
 
 permissions:
-  contents: read
+  contents: read   # for actions/checkout; a public repository can use {}
 
 jobs:
   screens:
@@ -49,9 +49,9 @@ on:
     types: [completed]
 
 permissions:
-  actions: read          # download the screens run's artifact
   contents: write        # store the images on the termshot-assets branch
   pull-requests: write   # post the comment
+  actions: read          # private repositories only: download the artifact
 
 jobs:
   publish:
@@ -118,18 +118,39 @@ report also goes to the job summary, and every log, PNG and text to the `termsho
 ## Permissions
 
 The action needs no secret, no app and no service outside GitHub: it stores images with the
-workflow's own `GITHUB_TOKEN`. It needs write access for two things, and only two:
+workflow's own `GITHUB_TOKEN`. Measured on github.com on 2026-10-07, by running each job with
+one permission fewer and watching it fail:
+
+| job | public repository | private repository |
+|---|---|---|
+| `mode: render`, which runs your code | `{}`: checkout, capture and artifact upload all work | `contents: read`: checkout fails without it |
+| `mode: publish` | `contents: write`, `pull-requests: write` | the same, plus `actions: read` |
+
+What each one is for, and what you get without it:
 
 | permission | what for | without it |
 |---|---|---|
-| `contents: write` | committing images to the `termshot-assets` branch | no images: set `publish: false` and the comment has the text diff only |
-| `pull-requests: write` | posting and updating the comment (`issues: write` works too) | no comment: the report is in the job summary only |
-| `actions: read` | downloading another run's artifact, in the `workflow_run` workflow | the publish workflow can't see the screens |
+| `contents: write` | committing images to the `termshot-assets` branch (`POST /git/blobs` returns 403 without it) | no images: set `publish: false`, and the comment has the text diff only |
+| `pull-requests: write` | posting and updating the comment (403 without it; `issues: write` also works) | no comment: the report is in the job summary only |
+| `actions: read` | downloading another run's artifact | private repositories: listing the run's artifacts returns 403. Public ones need any token, with no permission |
 
-GitHub offers no narrower way to put an image in a comment. Its API has no upload for comment
-attachments, and a `GITHUB_TOKEN` can't create a gist. The `user-attachments` upload that the web
-UI and `gh … --attach` use accepts user tokens only (OAuth, personal access tokens, some GitHub App
-user tokens), not the `GITHUB_TOKEN`, and an image uploaded there can't be deleted.
+### Why images need `contents: write`
+
+GitHub offers no narrower way to put an image in a comment. Measured on 2026-10-07:
+
+- The REST API's comment endpoints take a `body` string and nothing else. A `GITHUB_TOKEN` can't
+  create a gist (403).
+- The web UI's upload form (`github.com/upload/policies/assets`) ignores API tokens and wants a
+  browser session. With or without a token, it returns the same 422 page.
+- `gh issue comment --attach` and `gh pr comment --attach` (gh 2.102, September 2026) upload to
+  `uploads.github.com/user-attachments/assets`. An OAuth token can upload there (201). A
+  `GITHUB_TOKEN` gets 404, even with `contents`, `issues` and `pull-requests` write. gh refuses
+  it before sending ("unsupported authentication type"), and lists only OAuth, classic and
+  fine-grained personal access tokens and GitHub App user tokens.
+
+The publish workflow could upload with a personal access token kept as a secret, because
+`workflow_run` jobs get secrets. That isn't implemented. Such images would be uploaded as that
+person, couldn't be deleted, and would put a long-lived user token in CI.
 
 ### Why two workflows
 
@@ -138,7 +159,7 @@ that builds and runs your program runs your dependencies too. `actions/checkout`
 in `.git/config`, so a compromised dependency could push with it. Splitting the work keeps that
 token out of reach:
 
-- **`mode: render`** captures and renders with `contents: read`, and makes no API calls at all. It
+- **`mode: render`** captures and renders with no write permission, and makes no API calls at all. It
   leaves the logs, and a bundle describing them, in the `termshot-<id>` artifact.
 - **`mode: publish`** runs on `workflow_run`, from your default branch, in a job that checks out
   nothing and runs nothing of yours. It treats the artifact as untrusted data:
@@ -165,7 +186,8 @@ under it is how repositories get compromised.
 ### One workflow, two jobs
 
 If you take no pull requests from forks, one file will do. The second job downloads the first's
-artifact within the same run, so it doesn't need `actions: read`:
+artifact within the same run, with `actions/download-artifact`, so it doesn't need `actions:
+read` even in a private repository:
 
 ```yaml
 permissions: {}
@@ -215,8 +237,9 @@ With no `mode`, one job captures, renders and publishes, given `contents: write`
 - **Rulesets and branch protection.** A ruleset that targets all branches can stop
   `GITHUB_TOKEN` from creating `termshot-assets` or force-pushing it when pruning. Exclude the
   branch from the ruleset, or set `retention-days: 0`.
-- **Private repositories.** Image URLs are `github.com/<repo>/raw/termshot-assets/…`, which only
-  a signed-in viewer with access can open. This has not been verified yet. A fork of a private
+- **Private repositories.** Image URLs are `github.com/<repo>/raw/termshot-assets/…`. Signed out,
+  they return 404, and so do API tokens. Whether a signed-in viewer's browser shows them is not
+  verified yet. A fork of a private
   repository gets a write token only if the repository allows it ("Send write tokens to workflows
   from pull requests").
 - **Keeping images out of the repository.** Set `assets-repo` to another repository you own, and
