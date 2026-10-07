@@ -52,7 +52,7 @@ pub fn ui(frame: &mut Frame, app: &App) {
         .map(|job| {
             let (mark, color) = match job.status {
                 Status::Passed => ("✓", Color::Green),
-                Status::Failed => ("✗", Color::Red),
+                Status::Failed => ("✗", Color::Magenta),
                 Status::Running => ("●", Color::Yellow),
             };
             let name = if job.status == Status::Failed { job.name.bold() } else { job.name.into() };
