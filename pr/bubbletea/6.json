@@ -1,0 +1,22 @@
+{
+ "base_ref": "main",
+ "commit": "3a99fabe02a11ebc513792415ba955731c30a946",
+ "shots": {
+  "TestInbox": {
+   "base_png": "objects/c7/c708dfc77c75990d588c8f1497afdcfc5834d269c513cb961b62c415aafc7ef4.png",
+   "diff": "objects/e1/e13dc5bba603e1d9d66f8ecfdd646a488a9840f5f5327209c2343128467468a2.png",
+   "json": "objects/86/86447c7f1abb6288d35a0f574ee41c461ba906f468603bdf9663456c23ff3328.json",
+   "png": "objects/2c/2ce1ecf09877e8f9ec975d248a73a552298fbbe41be163f919e740a8bf265648.png",
+   "txt": "objects/a7/a7d4dc4d9f83e082bf0b28cf96930d86fc00ab5927466011fb6ff4165d0772c2.txt"
+  },
+  "TestInboxOpen": {
+   "base_png": "objects/fe/fe8cd966cbed020ff6052dd18127fb74a51e41bf760b35877a21a3af40b6501e.png",
+   "diff": "objects/1f/1f090eb21ac78efe5bec69045a1c4ae4d318ac9be1f351aa9d7b3e183fe2fa4f.png",
+   "json": "objects/62/62ad452d1511b487981fd09480902bef895801bc2268455db8e54da694a2a7e0.json",
+   "png": "objects/4a/4a9641be75c63bdb35539954b8b1374dc89ca000194b078ca89b470f1816aa10.png",
+   "txt": "objects/1b/1b381ddc23c6169d7e0e07de41d42fc73988027eb22729741c62e10864b70243.txt"
+  }
+ },
+ "termshot": "0.3.0",
+ "updated": "2026-10-07T21:06:34+00:00"
+}
