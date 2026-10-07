@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # A small TUI for the action's own screens: arrow keys move, enter picks, q quits.
-items=("Inbox" "Drafts" "Sent" "Archive" "Settings")
+items=("Inbox" "Drafts" "Outbox" "Archive" "Settings")
 sel=0
 printf '\e[?1049h\e[?25l'
 trap 'printf "\e[?25h\e[?1049l"' EXIT
