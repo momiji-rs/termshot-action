@@ -1,0 +1,20 @@
+{
+ "base_ref": "main",
+ "commit": "d2dbca1276e5e8534e2b1a312e7b04194596de6c",
+ "shots": {
+  "jobs__tests__failed_run.snap": {
+   "base_png": "objects/79/79141b0767fea3662182b18cdeeefad1c7fae1fc262c2fe63dedbaf14e2cfe23.png",
+   "diff": "objects/e0/e0802091d0e4f68677533c33859c67495fa9cbef1751316bcdcc7b01b7742949.png",
+   "json": "objects/4a/4a9f4eb3c4fa4a41ac94f05aab17d82bbcb38a34b53ca5e66959d1ec6b773f11.json",
+   "png": "objects/fa/fa7c9d9f3e9eeaf83e95c3a3bde6c6116752639fb5ac542f19d64202fac766cb.png",
+   "txt": "objects/c5/c5175b4fc13df9212e5b664f7939be3ff88f53a072bec77a2bf7fdedad3b138c.txt"
+  },
+  "jobs__tests__passed_run.snap": {
+   "json": "objects/ba/babb69f3608229a549ed0811f4c7908490d1c5acf6088a8f11905a118c376ff3.json",
+   "png": "objects/2c/2c216c6a8365cc90b819d935f66a6aad0e7be137544fbbb1ac8571152daa21b2.png",
+   "txt": "objects/d7/d7dd104f96f981a7fcce6c0bbfb05c32ecea125e8891e7b2dcb28ba7e9dd6d55.txt"
+  }
+ },
+ "termshot": "0.3.0",
+ "updated": "2026-10-07T21:40:50+00:00"
+}
