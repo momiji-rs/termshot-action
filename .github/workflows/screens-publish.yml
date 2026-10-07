@@ -29,3 +29,7 @@ jobs:
       - uses: ./
         with:
           id: ratatui
+      - uses: ./
+        with:
+          id: ink
+          args: --lf-newline

@@ -9,6 +9,10 @@ version numbers follow [Semantic Versioning](https://semver.org/). Pushing a tag
 
 ### Added
 
+- A guide for Ink, docs/ink.md. It forces colour in Vitest, so the frames keep their escape
+  sequences, and writes each frame from ink-testing-library with `toMatchFileSnapshot`. It also
+  waits for `useInput` before pressing keys. Its example, examples/ink, runs in this
+  repository's screens workflow.
 - A guide for Ratatui, docs/ratatui.md. Beside each insta text snapshot, which shows no
   colour, it keeps an ANSI snapshot of what the terminal receives, written with Ratatui's own
   crossterm backend into memory, as insta's `.snap.ansi`. termshot-action renders those. Its
