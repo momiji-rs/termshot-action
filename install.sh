@@ -2,8 +2,12 @@
 # Puts a termshot release in the runner's tool cache and prints its path as
 # bin=<path> to $GITHUB_OUTPUT. VERSION picks the release; LOCAL skips the download.
 set -euo pipefail
+# sha256sum where there is one (Linux), shasum otherwise (macOS).
+check() { if command -v sha256sum >/dev/null; then sha256sum -c -; else shasum -a 256 -c -; fi; }
+# bin=<path> to $GITHUB_OUTPUT in a workflow, or to stdout.
+emit() { if [ -n "${GITHUB_OUTPUT:-}" ]; then echo "$1" >> "$GITHUB_OUTPUT"; else echo "$1"; fi; }
 if [ -n "${LOCAL:-}" ]; then
-  echo "bin=$(cd "$(dirname "$LOCAL")" && pwd)/$(basename "$LOCAL")" >> "${GITHUB_OUTPUT:-/dev/stdout}"
+  emit "bin=$(cd "$(dirname "$LOCAL")" && pwd)/$(basename "$LOCAL")"
   exit 0
 fi
 case "$RUNNER_OS-$RUNNER_ARCH" in
@@ -19,8 +23,8 @@ if [ ! -x "$dir/termshot" ]; then
   tmp=$(mktemp -d)
   curl -fsSL --retry 3 -o "$tmp/$name.tar.gz" "$url/$name.tar.gz"
   curl -fsSL --retry 3 -o "$tmp/SHA256SUMS" "$url/SHA256SUMS"
-  (cd "$tmp" && grep " $name.tar.gz\$" SHA256SUMS | shasum -a 256 -c -)
+  (cd "$tmp" && grep " $name.tar.gz\$" SHA256SUMS | check)
   mkdir -p "$dir"
   tar -xzf "$tmp/$name.tar.gz" -C "$dir" --strip-components 1
 fi
-echo "bin=$dir/termshot" >> "${GITHUB_OUTPUT:-/dev/stdout}"
+emit "bin=$dir/termshot"
