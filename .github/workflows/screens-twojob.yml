@@ -1,0 +1,40 @@
+name: screens-twojob
+
+# Temporary: checks the one-file, two-job setup from the README. Not for merging.
+on: pull_request
+
+permissions: {}
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./
+        with:
+          mode: render
+          id: twojob
+          size: 34x11
+          px: '32'
+          shots: |
+            menu: ./demo/menu.sh
+              wait-for Inbox
+
+  publish:
+    needs: render
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: termshot-twojob
+          path: ${{ runner.temp }}/screens
+      - uses: ./
+        with:
+          id: twojob
+          bundle-dir: ${{ runner.temp }}/screens
+          size: 34x11
+          px: '32'
