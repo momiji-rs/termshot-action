@@ -14,7 +14,7 @@ import (
 var (
 	frame    = lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(lipgloss.Color("#5fd7d7")).Padding(0, 1)
 	title    = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#5fd7d7"))
-	selected = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#111823")).Background(lipgloss.Color("#dbe7f7"))
+	selected = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#111823")).Background(lipgloss.Color("#ffd75f"))
 	unread   = lipgloss.NewStyle().Foreground(lipgloss.Color("#ffd75f"))
 	help     = lipgloss.NewStyle().Faint(true)
 )
@@ -67,7 +67,7 @@ func (m model) View() tea.View {
 	}
 	status := help.Render("↑/↓ move · enter open · q quit")
 	if m.opened != "" {
-		status = "Opened " + title.Render(m.opened)
+		status = "Reading " + title.Render(m.opened)
 	}
 	return tea.NewView(frame.Render(b.String()) + "\n" + status + "\n")
 }
