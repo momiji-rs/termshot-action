@@ -17,6 +17,8 @@ import zipfile
 HERE = os.path.dirname(os.path.abspath(__file__))
 ACTION = os.path.join(os.path.dirname(HERE), "termshot_action.py")
 sys.path.insert(0, HERE)
+sys.path.insert(0, os.path.dirname(HERE))
+import capture  # noqa: E402
 import fake_github  # noqa: E402
 
 TERMSHOT = os.path.abspath(sys.argv[1] if len(sys.argv) > 1 else
@@ -217,7 +219,8 @@ def main():
 
     print("== the commands a shot runs get no credentials")
     # Prints only the names it looks for, so a run never shows other variables.
-    probe = ("env: env | cut -d= -f1 | grep -E '^(INPUT_|GITHUB_TOKEN$|GH_TOKEN$|ACTIONS_)' "
+    names = "|".join(n + "$" for n in capture.SECRET_ENV)
+    probe = (f"env: env | cut -d= -f1 | grep -E '^(INPUT_|{names})' "
              "| sort; echo \"TERM=$TERM\"")
     out, _, _ = run({"INPUT_SHOTS": probe, "TERMSHOT_DRY_RUN": "1", "GITHUB_TOKEN": "x",
                      "GH_TOKEN": "x", "ACTIONS_RUNTIME_TOKEN": "y"}, "push", {}, tmp)
