@@ -1,0 +1,10 @@
+╭────────────────────────────╮
+│ Inbox                      │
+│                            │
+│   Welcome to the team      │
+│ ● Invoice #1042            │
+│ ▸ Build failed on main     │
+│   Lunch on Friday?         │
+│                            │
+╰────────────────────────────╯
+Opened Build failed on main

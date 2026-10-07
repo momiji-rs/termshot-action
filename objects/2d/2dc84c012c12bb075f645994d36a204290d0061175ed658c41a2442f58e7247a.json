@@ -1,0 +1,14 @@
+{"cols":48,"rows":12,"cursor":{"col":0,"row":10,"shape":"block"},"lines":[
+[{"col":0,"text":"╭────────────────────────────╮","fg":"#5fd7d7","bg":"#111823"}],
+[{"col":0,"text":"│","fg":"#5fd7d7","bg":"#111823"},{"col":1,"text":" ","fg":"#dbe7f7","bg":"#111823"},{"col":2,"text":"Inbox","fg":"#5fd7d7","bg":"#111823","bold":true},{"col":7,"text":"                      ","fg":"#dbe7f7","bg":"#111823"},{"col":29,"text":"│","fg":"#5fd7d7","bg":"#111823"}],
+[{"col":0,"text":"│","fg":"#5fd7d7","bg":"#111823"},{"col":1,"text":"                            ","fg":"#dbe7f7","bg":"#111823"},{"col":29,"text":"│","fg":"#5fd7d7","bg":"#111823"}],
+[{"col":0,"text":"│","fg":"#5fd7d7","bg":"#111823"},{"col":1,"text":"   Welcome to the team      ","fg":"#dbe7f7","bg":"#111823"},{"col":29,"text":"│","fg":"#5fd7d7","bg":"#111823"}],
+[{"col":0,"text":"│","fg":"#5fd7d7","bg":"#111823"},{"col":1,"text":" ","fg":"#dbe7f7","bg":"#111823"},{"col":2,"text":"● ","fg":"#ffd75f","bg":"#111823"},{"col":4,"text":"Invoice #1042            ","fg":"#dbe7f7","bg":"#111823"},{"col":29,"text":"│","fg":"#5fd7d7","bg":"#111823"}],
+[{"col":0,"text":"│","fg":"#5fd7d7","bg":"#111823"},{"col":1,"text":" ","fg":"#dbe7f7","bg":"#111823"},{"col":2,"text":"▸ Build failed on main    ","fg":"#111823","bg":"#dbe7f7","bold":true},{"col":28,"text":" ","fg":"#dbe7f7","bg":"#111823"},{"col":29,"text":"│","fg":"#5fd7d7","bg":"#111823"}],
+[{"col":0,"text":"│","fg":"#5fd7d7","bg":"#111823"},{"col":1,"text":"   Lunch on Friday?         ","fg":"#dbe7f7","bg":"#111823"},{"col":29,"text":"│","fg":"#5fd7d7","bg":"#111823"}],
+[{"col":0,"text":"│","fg":"#5fd7d7","bg":"#111823"},{"col":1,"text":"                            ","fg":"#dbe7f7","bg":"#111823"},{"col":29,"text":"│","fg":"#5fd7d7","bg":"#111823"}],
+[{"col":0,"text":"╰────────────────────────────╯","fg":"#5fd7d7","bg":"#111823"}],
+[{"col":0,"text":"Opened ","fg":"#dbe7f7","bg":"#111823"},{"col":7,"text":"Build failed on main","fg":"#5fd7d7","bg":"#111823","bold":true}],
+[],
+[]
+]}
