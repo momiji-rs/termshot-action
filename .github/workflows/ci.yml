@@ -44,7 +44,7 @@ jobs:
           for f in menu.png menu.start.png menu.json menu.pty .termshot-bundle.json; do test -s "$DIR/$f"; done
           grep -q 'Opened Sent' "$DIR/menu.txt"
           grep -q 'Inbox' "$DIR/menu.start.txt"
-          head -c 8 "$DIR/menu.png" | od -An -tx1 | grep -q '89 50 4e 47 0d 0a 1a 0a'
+          printf '\211PNG\r\n\032\n' | cmp - <(head -c 8 "$DIR/menu.png")
 
   yaml:
     runs-on: ubuntu-latest
