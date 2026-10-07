@@ -1,0 +1,22 @@
+{
+ "base_ref": "main",
+ "commit": "f1e2e35c66617765fdccef4e73e484c956369d1e",
+ "shots": {
+  "deploy": {
+   "base_png": "objects/b5/b5b2fb5ce2d2bd3456d14758414a2ceaa8dafc518853032775e864a7ce46c9de.png",
+   "diff": "objects/f9/f9a1ccde5b27a2a58bbd0c63122f71e79dba31744eb83393bc35cbc2320cae2d.png",
+   "json": "objects/86/86adff10d0d0c70c5b723bae47f2b86ed748c8531eafb0070fbce7862fd529a8.json",
+   "png": "objects/5c/5ce58b9aee0101a350eb0010938afa8d8be5a0c6f446677586aea9fb1c50475c.png",
+   "txt": "objects/0b/0b3ee496ae87c2124db8e4f2078659bc9cb0ca0d78481d26e5d11ecc782ec318.txt"
+  },
+  "deploy-down": {
+   "base_png": "objects/31/31b16d0e606f306f4069b4d52dd7f952e76deb9176899e4875920097e3e69cd5.png",
+   "diff": "objects/b4/b4d10cb6c3c18bef555fb47905283f93d451d3f1876fe68c67c6e5d738e916ae.png",
+   "json": "objects/d1/d1ccc0bf326f806bff8270ef126c3c48b24010debfb8f86e84271cab676db698.json",
+   "png": "objects/47/478d934c02125ffa949a811bc5a782295a76e70ad7a588317f2c6bac3a58158a.png",
+   "txt": "objects/0b/0b3ee496ae87c2124db8e4f2078659bc9cb0ca0d78481d26e5d11ecc782ec318.txt"
+  }
+ },
+ "termshot": "0.3.0",
+ "updated": "2026-10-07T21:57:06+00:00"
+}
