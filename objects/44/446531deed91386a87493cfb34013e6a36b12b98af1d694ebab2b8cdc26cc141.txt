@@ -1,0 +1,8 @@
+╭─ termshot demo ─────────────╮
+│  ▸ Inbox                    │
+│    Drafts                   │
+│    Outbox                   │
+│    Archive                  │
+│    Settings                 │
+╰─────────────────────────────╯
+ ↑↓ move · enter pick · q quit

@@ -1,0 +1,22 @@
+{
+ "termshot": "0.2.0",
+ "commit": "ff9d618cafa1b52c0a08929f88b6638ea42ca725",
+ "updated": "2026-10-07T14:50:26+00:00",
+ "shots": {
+  "menu.start": {
+   "png": "objects/fa/fa55ceb3bcf920c757603e96924fa87281665a34949076d28c6f718f2053217c.png",
+   "txt": "objects/44/446531deed91386a87493cfb34013e6a36b12b98af1d694ebab2b8cdc26cc141.txt",
+   "json": "objects/00/0095f2a796c87e5634bc159403adb4c3e61b999f30067cf024dbbb554bb34349.json",
+   "diff": "objects/48/4811d77f98b83e9244dfcc00737d447cd15dfcf9d5231e4e7ef891c65c62bc10.png",
+   "base_png": "objects/6b/6b1882491e82ef3617b85654fb8528db26bf5ed52cc50f8b4da24c2625062fc8.png"
+  },
+  "menu": {
+   "png": "objects/33/33c7faab3902e93067244329ab36c71d285df9a8e0770feed02797c95f444738.png",
+   "txt": "objects/d0/d06cb353c4cd1ce6538095632a3423d8224fe807ae26a2c8624ebb562a09b4d9.txt",
+   "json": "objects/c3/c30aa10910c54a2f666c5d4fc7f1f925cbb727dfacdd10ca25bcbab66af829ee.json",
+   "diff": "objects/5b/5b31ad247c31c5711effb62abcc2015f1c480a1977c4e85acd90e4c9372cb74e.png",
+   "base_png": "objects/9c/9cc075864d98c1c5d13984d04a40e6a1398866766963dc777cea2ccf9e34ff1e.png"
+  }
+ },
+ "base_ref": "main"
+}
