@@ -1,0 +1,25 @@
+name: screens-publish
+
+# Publishes the screens of pull requests from forks, whose own runs have a
+# read-only token. This runs from the default branch and never runs their code.
+on:
+  workflow_run:
+    workflows: [screens]
+    types: [completed]
+
+permissions:
+  actions: read
+  contents: write
+  pull-requests: write
+
+jobs:
+  publish:
+    if: github.event.workflow_run.event == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      # The default branch: this repository's own action, not the fork's.
+      - uses: actions/checkout@v4
+      - uses: ./
+        with:
+          size: 34x11
+          px: '32'

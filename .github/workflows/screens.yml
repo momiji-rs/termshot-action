@@ -1,0 +1,28 @@
+name: screens
+
+# The action on itself: screens of demo/menu.sh, compared on every pull request.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  screens:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./
+        with:
+          size: 34x11
+          px: '32'
+          shots: |
+            menu: ./demo/menu.sh
+              wait-for Inbox
+              snap start
+              key down down
+              key enter
+              wait-for Opened
